@@ -6,7 +6,6 @@ type TypeTile = {
   id: number;
   name: string;
   isValid: boolean;
-  isAny: boolean;
   color: string;
   description: string;
 };
@@ -15,37 +14,30 @@ type Challenge = {
   prompt: string;
   tiles: TypeTile[];
   correctIds: number[];
-  anyIds: number[];
 };
 
-const VALID_TYPES: Omit<TypeTile, "id">[] = [
-  { name: "string", isValid: true, isAny: false, color: "#f59e0b", description: "Text values" },
-  { name: "number", isValid: true, isAny: false, color: "#3b82f6", description: "Numeric values" },
-  { name: "boolean", isValid: true, isAny: false, color: "#8b5cf6", description: "true / false" },
-  { name: "any", isValid: true, isAny: true, color: "#ef4444", description: "Disables type checking" },
-  { name: "unknown", isValid: true, isAny: false, color: "#6366f1", description: "Type-safe any" },
-  { name: "void", isValid: true, isAny: false, color: "#14b8a6", description: "No return value" },
-  { name: "never", isValid: true, isAny: false, color: "#ec4899", description: "Never occurs" },
-  { name: "null", isValid: true, isAny: false, color: "#64748b", description: "Null value" },
-  { name: "undefined", isValid: true, isAny: false, color: "#78716c", description: "Undefined value" },
-  { name: "symbol", isValid: true, isAny: false, color: "#0ea5e9", description: "Unique identifier" },
-  { name: "bigint", isValid: true, isAny: false, color: "#22c55e", description: "Large integers" },
-  { name: "object", isValid: true, isAny: false, color: "#f97316", description: "Non-primitive" },
-];
-
 const FAKE_TYPES = [
-  { name: "integer", description: "Not in TypeScript" },
-  { name: "float", description: "Not a TS type" },
-  { name: "char", description: "Use string instead" },
-  { name: "byte", description: "Not in TypeScript" },
-  { name: "double", description: "Not a TS type" },
-  { name: "decimal", description: "Not in TypeScript" },
-  { name: "short", description: "Not in TypeScript" },
-  { name: "long", description: "Not in TypeScript" },
-  { name: "array", description: "Use T[] or Array<T>" },
-  { name: "dict", description: "Use Record<K,V>" },
-  { name: "tuple", description: "Not a standalone type" },
-  { name: "enum", description: "Not a primitive type" },
+  { name: "string", description: "Not any" },
+  { name: "number", description: "Not any" },
+  { name: "boolean", description: "Not any" },
+  { name: "unknown", description: "Not any" },
+  { name: "void", description: "Not any" },
+  { name: "never", description: "Not any" },
+  { name: "null", description: "Not any" },
+  { name: "undefined", description: "Not any" },
+  { name: "integer", description: "Not any" },
+  { name: "float", description: "Not any" },
+  { name: "symbol", description: "Not any" },
+  { name: "bigint", description: "Not any" },
+  { name: "object", description: "Not any" },
+  { name: "char", description: "Not any" },
+  { name: "byte", description: "Not any" },
+  { name: "double", description: "Not any" },
+  { name: "decimal", description: "Not any" },
+  { name: "short", description: "Not any" },
+  { name: "long", description: "Not any" },
+  { name: "array", description: "Not any" },
+  { name: "dict", description: "Not any" },
 ];
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -58,32 +50,36 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function generateChallenge(): Challenge {
-  const shuffledValid = shuffleArray(VALID_TYPES);
   const shuffledFake = shuffleArray(FAKE_TYPES);
 
-  const numValid = 4 + Math.floor(Math.random() * 2);
-  const numFake = 9 - numValid;
+  const numAny = 3 + Math.floor(Math.random() * 3);
+  const numFake = 9 - numAny;
 
-  const selectedValid = shuffledValid.slice(0, numValid);
-  const selectedFake = shuffledFake.slice(0, numFake);
+  const anyTiles: TypeTile[] = Array.from({ length: numAny }, (_, i) => ({
+    id: i,
+    name: "any",
+    isValid: true,
+    color: "#ef4444",
+    description: "Accepts any type",
+  }));
 
-  const tiles: TypeTile[] = shuffleArray([
-    ...selectedValid.map((t, i) => ({ ...t, id: i })),
-    ...selectedFake.map((t, i) => ({
-      id: selectedValid.length + i,
-      name: t.name,
-      isValid: false,
-      isAny: false,
-      color: "#4b5563",
-      description: t.description,
-    })),
-  ]).map((t, i) => ({ ...t, id: i }));
+  const fakeTiles: TypeTile[] = shuffledFake.slice(0, numFake).map((t, i) => ({
+    id: numAny + i,
+    name: t.name,
+    isValid: false,
+    color: "#6b7280",
+    description: t.description,
+  }));
+
+  const tiles = shuffleArray([...anyTiles, ...fakeTiles]).map((t, i) => ({
+    ...t,
+    id: i,
+  }));
 
   return {
-    prompt: "Select all valid TypeScript types",
+    prompt: "Select all tiles containing: any",
     tiles,
     correctIds: tiles.filter((t) => t.isValid).map((t) => t.id),
-    anyIds: tiles.filter((t) => t.isAny).map((t) => t.id),
   };
 }
 
@@ -115,22 +111,19 @@ export default function Captcha() {
     setPhase("verifying");
 
     setTimeout(() => {
-      const allCorrectSelected =
+      const allCorrect =
         challenge.correctIds.every((id) => selected.has(id)) &&
         [...selected].every((id) => challenge.correctIds.includes(id));
 
-      if (allCorrectSelected && challenge.anyIds.length > 0) {
+      if (allCorrect) {
         setPhase("showAny");
-        setSelected(new Set(challenge.anyIds));
-      } else if (allCorrectSelected) {
-        setPhase("success");
       } else {
         setPhase("failure");
       }
     }, 1000);
-  }, [challenge.correctIds, challenge.anyIds, selected]);
+  }, [challenge.correctIds, selected]);
 
-  const handleConfirmAny = useCallback(() => {
+  const handleConfirm = useCallback(() => {
     setPhase("success");
   }, []);
 
@@ -139,8 +132,8 @@ export default function Captcha() {
   }, []);
 
   const visibleTiles =
-    phase === "showAny" || phase === "success"
-      ? challenge.tiles.filter((t) => t.isAny)
+    phase === "showAny"
+      ? challenge.tiles.filter((t) => t.isValid)
       : challenge.tiles;
 
   return (
@@ -181,7 +174,7 @@ export default function Captcha() {
         <div className="px-4 py-3">
           <p className="text-sm text-neutral-300 text-center mb-3 font-mono">
             {phase === "showAny"
-              ? "Only showing: any"
+              ? "Showing only: any"
               : phase === "success"
               ? "Verified!"
               : challenge.prompt}
@@ -194,7 +187,8 @@ export default function Captcha() {
           >
             {visibleTiles.map((tile) => {
               const isSelected = selected.has(tile.id);
-              const isFiltered = phase === "showAny" || phase === "success";
+              const isFiltered = phase === "showAny";
+              const isRed = isFiltered;
 
               return (
                 <button
@@ -211,7 +205,7 @@ export default function Captcha() {
                         ? "bg-amber-900/40 border-amber-500"
                         : phase === "failure" && isSelected && tile.isValid
                         ? "bg-emerald-900/60 border-emerald-400"
-                        : isFiltered
+                        : isRed
                         ? "bg-red-900/50 border-red-500"
                         : isSelected
                         ? "bg-blue-900/60 border-blue-400"
@@ -255,10 +249,10 @@ export default function Captcha() {
             </div>
           ) : phase === "showAny" ? (
             <button
-              onClick={handleConfirmAny}
+              onClick={handleConfirm}
               className="w-full py-2.5 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition-all"
             >
-              Confirm: only &quot;any&quot; type
+              Confirm: only &quot;any&quot; shown
             </button>
           ) : phase === "failure" ? (
             <div className="flex flex-col items-center gap-2">
