@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type TileName = "any" | "unknown" | "never";
 
@@ -48,7 +48,15 @@ const FAILURE_MESSAGES = [
 ];
 
 export default function Captcha() {
-  const [tiles, setTiles] = useState<TypeTile[]>(() => generateTiles());
+  const [tiles, setTiles] = useState<TypeTile[]>(
+    () => TILE_POOL.map((t, i) => ({ ...t, id: i }))
+  );
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTiles(generateTiles());
+  }, []);
+
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [phase, setPhase] = useState<Phase>("select");
   const [failMessage, setFailMessage] = useState("");
