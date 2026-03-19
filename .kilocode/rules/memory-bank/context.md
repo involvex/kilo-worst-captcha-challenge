@@ -92,3 +92,4 @@ export async function GET() {
 | 2026-03-19 | Simplified CAPTCHA: all valid tiles are now "any", grid shows only any after verify |
 | 2026-03-19 | Made CAPTCHA impossible: only any/unknown/never tiles, verify always fails with reason |
 | 2026-03-19 | Fixed hydration mismatch: tiles now initialize deterministically and shuffle after mount via useEffect |
+| 2026-03-19 | Added suppressHydrationWarning on html element to handle browser extension class injection |
