@@ -89,3 +89,4 @@ export async function GET() {
 | Initial | Template created with base setup |
 | 2026-03-19 | Added image-grid CAPTCHA component with random challenge generation |
 | 2026-03-19 | Rebuilt CAPTCHA as TypeScript type verification with any-type filter |
+| 2026-03-19 | Simplified CAPTCHA: all valid tiles are now "any", grid shows only any after verify |
